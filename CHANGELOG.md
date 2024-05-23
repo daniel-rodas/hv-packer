@@ -1,5 +1,21 @@
 # Changelog
 
+## Version 3.0.2 2024-05-23
+
+Codename: Defying Gravity - [https://www.youtube.com/watch?v=l0Bs_eaXaCo](https://www.youtube.com/watch?v=l0Bs_eaXaCo)
+
+* [ANSIBLE] - permanent removal variables from playbook
+  * install_zabbix:                false # install Zabbix-agent
+  * install_zabbix_as_root:        false # install Zabbix-agent as root
+  * install_puppet:                true  # Install Puppet
+  * install_kubernetes_workaround: false # add `cgroup.memory=nokmem` to grub
+* [ANSIBLE] - change playbook version to 20240404
+* [ANSIBLE] - removed `systemd.unified_cgroup_hierarchy` for RHEL anc clones above 8 as this is set by default in OS
+* [AlmaLinux] - added support for AlmaLinux 9.4
+* [OracleLinux] - added support for Oracle Linux 9.4
+* [RockyLinux] - added support for Rocky Linux 9.4
+* [Ubuntu] - added support for Ubuntu 22.04
+
 ## Version 3.0.1 2023-12-08
 
 Codename: Slip Away - [https://www.youtube.com/watch?v=G8g_7CDwbmI](https://www.youtube.com/watch?v=G8g_7CDwbmI)

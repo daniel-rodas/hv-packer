@@ -1,6 +1,6 @@
 variables:
-  packer_version: "1.9.4"
-  dind: 24.0-dind
+  packer_version: "1.10.3"
+  install_packer: "true"
   build_alma8: "false"
   build_alma9: "false"
   build_rocky8: "false"
@@ -9,11 +9,11 @@ variables:
   build_oracle9: "false"
   build_ubuntu2004: "false"
   build_ubuntu2204: "false"
+  build_ubuntu2404: "false"
   build_windows2022_std: "false"
   build_windows2022_dc: "false"
   build_windows2019_std: "false"
   build_windows2019_dc: "false"
-
 default:
   artifacts:
     expire_in: 4 hour
@@ -24,171 +24,125 @@ default:
       - runner_system_failure
       - stuck_or_timeout_failure
       - api_failure
+      - script_failure
 stages:
-  - alma-validate
-  - rocky-validate
-  - oracle-validate
-  - ubuntu-validate
-  - windows-validate
+  - validate
   - install_packer
-  - alma8-build
-  - alma9-build
-  - rocky8-build
-  - rocky9-build
-  - oracle8-build
-  - oracle9-build
-  - windows2022-build
-  - windows2019-build
-  - ubuntu2004-build
-  - ubuntu2204-build
-  #   - ansible-lint
+  - build
+  - alma_build
+  - rocky_build
+  - oracle_build
+  - windows_build
+  - ubuntu_build
+
+.validate:
+  stage: validate
+  variables:
+    ACTION: verify
+    LOG: 0
+  script:
+    - pwd
+    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
+    - packer init config.pkr.hcl
+    - .\hv_generic.ps1 -Action $ACTION -Version $VERSION -Template $TEMPLATE -Log $LOG
+  tags:
+    - windows
+    - hyperv
+
+.build:
+  stage: build
+  variables:
+    ACTION: build
+    LOG: 0
+  script:
+    - pwd
+    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
+    - packer init config.pkr.hcl
+    - Get-VM -Name packer-* | Remove-VM -Force -Verbose -ErrorAction SilentlyContinue;$true
+    - .\hv_generic.ps1 -Action $ACTION -Version $VERSION -Template $TEMPLATE -Log $LOG
+  tags:
+    - windows
+    - hyperv
+  resource_group: build
 
 alma8:
-  stage: alma-validate
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action verify -Version almalinux-8.9 -Template rhel -Log 0
-  tags:
-    - windows
-    - hyperv
+  variables:
+    VERSION: almalinux-8.9
+    TEMPLATE: rhel
+  extends: .validate
+
 alma9:
-  stage: alma-validate
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action verify -Version almalinux-9.3 -Template rhel -Log 0
-  tags:
-    - windows
-    - hyperv
+  variables:
+    VERSION: almalinux-9.4
+    TEMPLATE: rhel
+  extends: .validate
+
 rocky8:
-  stage: rocky-validate
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action verify -Version rockylinux-8.9 -Template rhel -Log 0
-  tags:
-    - windows
-    - hyperv
+  variables:
+    VERSION: rockylinux-8.9
+    TEMPLATE: rhel
+  extends: .validate
+
 rocky9:
-  stage: rocky-validate
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action verify -Version rockylinux-9.3 -Template rhel -Log 0
-  tags:
-    - windows
-    - hyperv
+  variables:
+    VERSION: rockylinux-9.4
+    TEMPLATE: rhel
+  extends: .validate
+
 oracle8:
-  stage: oracle-validate
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action verify -Version oraclelinux-8.9 -Template rhel -Log 0
-  tags:
-    - windows
-    - hyperv
+  variables:
+    VERSION: oraclelinux-8.9
+    TEMPLATE: rhel
+  extends: .validate
+
 oracle9:
-  stage: oracle-validate
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action verify -Version oraclelinux-9.3 -Template rhel -Log 0
-  tags:
-    - windows
-    - hyperv
+  variables:
+    VERSION: oraclelinux-9.4
+    TEMPLATE: rhel
+  extends: .validate
 
 windows2022std:
-  stage: windows-validate
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action verify -Version windows_server_2022_std -Template windows -Log 0
-  tags:
-    - windows
-    - hyperv
+  variables:
+    VERSION: windows_server_2022_std
+    TEMPLATE: windows
+  extends: .validate
 
 windows2022dc:
-  stage: windows-validate
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action verify -Version windows_server_2022_dc -Template windows -Log 0
-  tags:
-    - windows
-    - hyperv
+  variables:
+    VERSION: windows_server_2022_dc
+    TEMPLATE: windows
+  extends: .validate
 
 windows2019std:
-  stage: windows-validate
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action verify -Version windows_server_2019_std -Template windows -Log 0
-  tags:
-    - windows
-    - hyperv
+  variables:
+    VERSION: windows_server_2019_std
+    TEMPLATE: windows
+  extends: .validate
 
 windows2019dc:
-  stage: windows-validate
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action verify -Version windows_server_2019_dc -Template windows -Log 0
-  tags:
-    - windows
-    - hyperv
-
+  variables:
+    VERSION: windows_server_2019_dc
+    TEMPLATE: windows
+  extends: .validate
 
 ubuntu2004:
-  stage: ubuntu-validate
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action verify -Version ubuntu-20.04 -Template ubuntu -Log 0
-  tags:
-    - windows
-    - hyperv
+  variables:
+    VERSION: ubuntu-20.04
+    TEMPLATE: ubuntu
+  extends: .validate
 
 ubuntu2204:
-  stage: ubuntu-validate
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action verify -Version ubuntu-22.04 -Template ubuntu -Log 0
-  tags:
-    - windows
-    - hyperv
+  variables:
+    VERSION: ubuntu-22.04
+    TEMPLATE: ubuntu
+  extends: .validate
 
-# ansible-lint:
-#   stage: ansible-lint
-#   image: ${PIPELINE_IMAGE}:${PIPELINE_IMAGE_TAG}
-#   allow_failure: true
-#   services:
-#     - docker:$dind
-#   before_script:
-#   - yamllint --version
-#   - ansible-lint --version
-#   script:
-#     - yamllint -c ./.yamllint ./extra/playbooks/*.yaml
-#     - yamllint -c ./.yamllint ./extra/playbooks/*.yml
-#     - ansible-lint ./extra/playbooks/*.yaml
-#   tags:
-#     - docker
-#     - packer
-#   needs:
-#     - get-packer
+ubuntu2404:
+  variables:
+    VERSION: ubuntu-24.04
+    TEMPLATE: ubuntu
+  extends: .validate
+
 
 # Here building starts
 # Install required packer choco package
@@ -198,6 +152,7 @@ install_packer:
   stage: install_packer
   before_script:
     - pwd
+    - echo $CI_COMMIT_BRANCH
     - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
     - "Get-Vm -name packer-*|Stop-VM -Force -TurnOff -Verbose"
     - Sleep 30
@@ -208,214 +163,136 @@ install_packer:
   tags:
     - windows
     - hyperv
-alma8_build:
-  stage: alma8-build
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - "Get-Vm -name packer-*|Stop-VM -Force -TurnOff"
-    - Sleep 120
-    - "Get-Vm -name packer-*|Remove-VM -Force"
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action build -Version almalinux-8.9 -Template rhel -Log 0
   rules:
-    - if: $build_alma8 == "true"
-      when: on_success
-  tags:
-    - windows
-    - hyperv
+    - if: $CI_COMMIT_BRANCH == "build" || $install_packer == "true"
+      when: always
+
+alma8_build:
+  stage: alma_build
+  variables:
+    VERSION: almalinux-8.9
+    TEMPLATE: rhel
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "build" || $build_alma8 == "true"'
+      when: always
+  extends: .build
 
 alma9_build:
-  stage: alma9-build
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - "Get-Vm -name packer-*|Stop-VM -Force -TurnOff"
-    - Sleep 120
-    - "Get-Vm -name packer-*|Remove-VM -Force"
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action build -Version almalinux-9.3 -Template rhel -Log 0
+  stage: alma_build
+  variables:
+    VERSION: almalinux-9.4
+    TEMPLATE: rhel
   rules:
-    - if: $build_alma9 == "true"
-      when: on_success
-  tags:
-    - windows
-    - hyperv
+    - if: '$CI_COMMIT_BRANCH == "build" || $build_alma9 == "true"'
+      when: always
+  extends: .build
+
 rocky8_build:
-  stage: rocky8-build
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - "Get-Vm -name packer-*|Stop-VM -Force -TurnOff"
-    - Sleep 120
-    - "Get-Vm -name packer-*|Remove-VM -Force"
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action build -Version rockylinux-8.9 -Template rhel -Log 0
+  stage: rocky_build
+  variables:
+    VERSION: rockylinux-8.9
+    TEMPLATE: rhel
   rules:
-    - if: $build_rocky8 == "true"
-      when: on_success
-  tags:
-    - windows
-    - hyperv
+    - if: '$CI_COMMIT_BRANCH == "build" || $build_rocky8 == "true"'
+      when: always
+  extends: .build
+
 rocky9_build:
-  stage: rocky9-build
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - "Get-Vm -name packer-*|Stop-VM -Force -TurnOff"
-    - Sleep 120
-    - "Get-Vm -name packer-*|Remove-VM -Force"
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action build -Version rockylinux-9.3 -Template rhel -Log 0
+  stage: rocky_build
+  variables:
+    VERSION: rockylinux-9.4
+    TEMPLATE: rhel
   rules:
-    - if: $build_rocky9 == "true"
-      when: on_success
-  tags:
-    - windows
-    - hyperv
+    - if: '$CI_COMMIT_BRANCH == "build" || $build_rocky9 == "true"'
+      when: always
+  extends: .build
+
 oracle8_build:
-  stage: oracle8-build
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - "Get-Vm -name packer-*|Stop-VM -Force -TurnOff"
-    - Sleep 120
-    - "Get-Vm -name packer-*|Remove-VM -Force"
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action build -Version oraclelinux-8.9 -Template rhel -Log 0
+  stage: oracle_build
+  variables:
+    VERSION: oraclelinux-8.9
+    TEMPLATE: rhel
   rules:
-    - if: $build_oracle8 == "true"
-      when: on_success
-  tags:
-    - windows
-    - hyperv
+    - if: '$CI_COMMIT_BRANCH == "build" || $build_oracle8 == "true"'
+      when: always
+  extends: .build
+
 oracle9_build:
-  stage: oracle9-build
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - "Get-Vm -name packer-*|Stop-VM -Force -TurnOff"
-    - Sleep 120
-    - "Get-Vm -name packer-*|Remove-VM -Force"
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action build -Version oraclelinux-9.3 -Template rhel -Log 0
+  stage: oracle_build
+  variables:
+    VERSION: oraclelinux-9.4
+    TEMPLATE: rhel
   rules:
-    - if: $build_oracle9 == "true"
-      when: on_success
-  tags:
-    - windows
-    - hyperv
+    - if: '$CI_COMMIT_BRANCH == "build" || $build_oracle9 == "true"'
+      when: always
+  extends: .build
 
 windows2022_std_build:
-  stage: windows2022-build
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - "Get-Vm -name packer-*|Stop-VM -Force -TurnOff"
-    - Sleep 120
-    - "Get-Vm -name packer-*|Remove-VM -Force"
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action build -Version windows_server_2022_std -Template windows -Log 0
+  stage: windows_build
+  variables:
+    VERSION: windows_server_2022_std
+    TEMPLATE: windows
   rules:
-    - if: $build_windows2022_std == "true"
-      when: on_success
-  needs:
-    - install_packer
-  tags:
-    - windows
-    - hyperv
+    - if: '$CI_COMMIT_BRANCH == "build" || $build_windows2022_std == "true"'
+      when: always
+  extends: .build
 
 windows2022_dc_build:
-  stage: windows2022-build
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - "Get-Vm -name packer-*|Stop-VM -Force -TurnOff"
-    - Sleep 120
-    - "Get-Vm -name packer-*|Remove-VM -Force"
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action build -Version windows_server_2022_dc -Template windows -Log 0
+  stage: windows_build
+  variables:
+    VERSION: windows_server_2022_dc
+    TEMPLATE: windows
   rules:
-    - if: $build_windows2022_dc == "true"
-      when: on_success
-  tags:
-    - windows
-    - hyperv
-  needs:
-    - install_packer
+    - if: '$CI_COMMIT_BRANCH == "build" || $build_windows2022_dc == "true"'
+      when: always
+  extends: .build
 
 windows2019_std_build:
-  stage: windows2019-build
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - "Get-Vm -name packer-*|Stop-VM -Force -TurnOff"
-    - Sleep 120
-    - "Get-Vm -name packer-*|Remove-VM -Force"
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action build -Version windows_server_2019_std -Template windows -Log 0
+  stage: windows_build
+  variables:
+    VERSION: windows_server_2019_std
+    TEMPLATE: windows
   rules:
-    - if: $build_windows2019_std == "true"
-      when: on_success
-  needs:
-    - install_packer
-  tags:
-    - windows
-    - hyperv
+    - if: '$CI_COMMIT_BRANCH == "build" || $build_windows2019_std == "true"'
+      when: always
+  extends: .build
 
 windows2019_dc_build:
-  stage: windows2019-build
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - "Get-Vm -name packer-*|Stop-VM -Force -TurnOff"
-    - Sleep 120
-    - "Get-Vm -name packer-*|Remove-VM -Force"
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action build -Version windows_server_2019_dc -Template windows -Log 0
+  stage: windows_build
+  variables:
+    VERSION: windows_server_2019_dc
+    TEMPLATE: windows
   rules:
-    - if: $build_windows2019_dc == "true"
-      when: on_success
-  tags:
-    - windows
-    - hyperv
-  needs:
-    - install_packer
+    - if: '$CI_COMMIT_BRANCH == "build" || $build_windows2019_dc == "true"'
+      when: always
+  extends: .build
 
 ubuntu2004_build:
-  stage: ubuntu2004-build
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - "Get-Vm -name packer-*|Stop-VM -Force -TurnOff"
-    - Sleep 120
-    - "Get-Vm -name packer-*|Remove-VM -Force"
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action build -Version ubuntu-20.04 -Template ubuntu -Log 0
+  stage: ubuntu_build
+  variables:
+    VERSION: ubuntu-20.04
+    TEMPLATE: ubuntu
   rules:
-    - if: $build_ubuntu2004 == "true"
-      when: on_success
-  tags:
-    - windows
-    - hyperv
-  needs:
-    - install_packer
+    - if: '$CI_COMMIT_BRANCH == "build" || $build_ubuntu2004 == "true"'
+      when: always
+  extends: .build
 
 ubuntu2204_build:
-  stage: ubuntu2204-build
-  script:
-    - pwd
-    - '$env:PACKER_CACHE_DIR="d:\packer_cache"'
-    - "Get-Vm -name packer-*|Stop-VM -Force -TurnOff"
-    - Sleep 120
-    - "Get-Vm -name packer-*|Remove-VM -Force"
-    - packer init config.pkr.hcl
-    - .\hv_generic.ps1 -Action build -Version ubuntu-22.04 -Template ubuntu -Log 0
+  stage: ubuntu_build
+  variables:
+    VERSION: ubuntu-22.04
+    TEMPLATE: ubuntu
   rules:
-    - if: $build_ubuntu2204 == "true"
-      when: on_success
-  tags:
-    - windows
-    - hyperv
-  needs:
-    - install_packer
+    - if: '$CI_COMMIT_BRANCH == "build" || $build_ubuntu2204 == "true"'
+      when: always
+  extends: .build
+
+ubuntu2404_build:
+  stage: ubuntu_build
+  variables:
+    VERSION: ubuntu-24.04
+    TEMPLATE: ubuntu
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "build" || $build_ubuntu2404 == "true"'
+      when: always
+  extends: .build

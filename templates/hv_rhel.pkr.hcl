@@ -48,10 +48,10 @@ variable "output_directory" {
   type    = string
   default = ""
 }
-variable "provision_script_options" {
-  type    = string
-  default = ""
-}
+// variable "provision_script_options" {
+//   type    = string
+//   default = ""
+// }
 variable "output_vagrant" {
   type    = string
   default = ""

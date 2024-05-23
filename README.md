@@ -1,4 +1,4 @@
-# Set of Hashicorp's `Packer` templates to create Microsoft Hyper-V virtual machines
+# Set of Hashicorp's `Packer's` templates to create Microsoft Hyper-V virtual machines
 
 ![RockyLinux](https://img.shields.io/badge/Linux-Rocky-brightgreen)
 ![OracleLinux](https://img.shields.io/badge/Linux-Oracle-brightgreen)
@@ -13,7 +13,7 @@ Consider buying me a coffee if you like my work. All donations are appreciated. 
 
 <!-- TOC -->
 
-- [Set of Hashicorp's Packer templates to create Microsoft Hyper-V virtual machines](#set-of-hashicorps-packer-templates-to-create-microsoft-hyper-v-virtual-machines)
+- [Set of Hashicorp's Packer's templates to create Microsoft Hyper-V virtual machines](#set-of-hashicorps-packers-templates-to-create-microsoft-hyper-v-virtual-machines)
   - [Requirements](#requirements)
   - [Requirements - Quick Start](#requirements---quick-start)
     - [Install packer from Chocolatey](#install-packer-from-chocolatey)
@@ -50,13 +50,14 @@ Consider buying me a coffee if you like my work. All donations are appreciated. 
     - [I have problem how to find a proper WIM  name in Windows ISO to pick proper version](#i-have-problem-how-to-find-a-proper-wim--name-in-windows-iso-to-pick-proper-version)
     - [On Windows machines, build break during updates phase, when update cycles are interfering with each other](#on-windows-machines-build-break-during-updates-phase-when-update-cycles-are-interfering-with-each-other)
     - [Why don't you use ansible instead of shell scripts for provisioning](#why-dont-you-use-ansible-instead-of-shell-scripts-for-provisioning)
+  - [Support me](#support-me)
   - [About](#about)
 
 <!-- /TOC -->
 
 ## Requirements
 
-- packer <=`1.9.1`. Do not use packer below 1.7.0 version. For previous packer versions use previous releases from this repository
+- packer >=`1.10.0`. Do not use packer below 1.7.0 version. For previous packer versions use previous releases from this repository
 - Microsoft Hyper-V Server 2016/2019 or Microsoft Windows Server 2016/2019 (not 2012/R2) with Hyper-V role installed as host to build your images
 - firewall exceptions for `packer` http server (look down below)
 - [OPTIONAL] Vagrant >= `2.3.4` - for `vagrant` version of scripts. Boxes (prebuilt) are already available here: [https://app.vagrantup.com/marcinbojko](https://app.vagrantup.com/marcinbojko)
@@ -68,7 +69,7 @@ Consider buying me a coffee if you like my work. All donations are appreciated. 
 ### Install packer from Chocolatey
 
 ```cmd
-choco install packer --version=1.9.1 -y
+choco install packer --version=1.10.0 -y
 ```
 
 ### Install required plugins
@@ -114,7 +115,6 @@ switch_name = "vSwitch"
 |Windows|Administrator|password|
 |CentOS/RHEL|root|password|
 |Ubuntu|ubuntu|password|
-|||
 
 ## Scripts
 
@@ -130,41 +130,17 @@ switch_name = "vSwitch"
   |sysinternals|latest|Mandatory|
   |tabby|latest|Optional|
 
-- `phase3.ps1` Puppet agent settings will be customized (`server=foreman.example.com`) with parameters:
-  - `Version` - puppet chocolatey version, for example "6.26.0"
-  - `AddPrivateChoco` ($true/$false) - if set to true, private MyGet repository will be added as `public`
-  - `PuppetMaster` (foreman.example.com) - if set, in `puppet.conf` section server will point to that variable
-
-  Example of usage:
-
-  `.\phase3.ps1 -Version 7.14.0 -AddPrivateChoco $true -PuppetMaster foreman.example.com`
-
-  Puppet is set to clear any temp SSL keys and to be stopped after generalize phase
-
-- `phase5b-docker.ps1` - Docker settings can be customised
-  - `requiredVersion` - which version of docker module to install - defaults to 19.03.1
-  - `installCompose` ($true/$false) - install docker-compose from chocolatey packages
-  - `dockerLocation` - of set, will default docker images and settings there. On empty, docker location is not being set.
-  - `configDockerLocation` - default place for docker's config file
-
-  Example of usage
-
-  `.\phase5b-docker.ps1 -requiredVersion "19.03.1" -installCompose $true -dockerLocation "d:\docker" -configDockerLocation "C:\ProgramData\Docker\config"`
-
 ### Linux Machines
 
 - Repositories:
 
-  |Repository|Package|switch|default
+  |Repository|Package|switch|default|
   |----------|------------|---|---|
   |Epel 7/8/9|epel-release|can be switched off by setting "install_epel" to `false`|true|
-  |Zabbix 6.0|zabbix-agent|can be switched on by setting "install_zabbix" to `true`|false|
-  |Puppet 7  |puppet-agent|can be switched off by setting "install_puppet" to false|false|
   |Webmin |webmin|can be switched on by setting "install_webmin" to `false`|false|
   |Cockpit |cockpit|can be switched on by setting "install_zabbix" to `true`|true|
   |Hyper-V |SCVMM Agent|can be switched off by setting "install_hyperv" to `false`|true|
   |Neofetch  |neofetch|can be switched off by setting "install_neofetch" to `false`|true|
-  ||||
 
   Be aware, turning off latest System Center Virtual Machine Agent will cause System Center fail to deploy machines
 
@@ -179,13 +155,8 @@ Playbooks are held in `/extra/playbooks` folder, with proper OS variables.
 install_epel:                  true  # install Epel
 install_webmin:                true  # install Webmin
 install_hyperv:                true  # install Hyper-v and scvmm agent
-install_zabbix:                false # install Zabbix-agent
-install_zabbix_as_root:        false # install Zabbix-agent as root
 install_cockpit:               false # install Cockpit
-install_puppet:                true  # Install Puppet
 install_docker_workaround:     true  # add `fsck.repair=yes` to grub
-install_kubernetes_workaround: false # add `cgroup.memory=nokmem` to grub
-remove_puppet_ssl_keys:        false # remove any ssl keys after puppet installation
 install_neofetch:              true  # install neofetch
 install_updates:               true  # install updates
 install_extra_groups:          true  # install extra groups
@@ -261,42 +232,42 @@ Example for Windows 2022 Datacenter
 
 |Action|Version|Template|Log|OS|
 |-------|-------|--------|---|-|
-|`build`|almalinux-8.8|rhel|0/1|Alma Linux 8.8|
-|`build`|almalinux-9.2|rhel|0/1|Alma Linux 9.2|
+|`build`|almalinux-8.9|rhel|0/1|Alma Linux 8.9|
+|`build`|almalinux-9.4|rhel|0/1|Alma Linux 9.4|
 
 #### Examples for AlmaLinux
 
 ```powershell
-.\hv_generic.ps1 -Action build -Version almalinux-8.8 -Template rhel -Log 0
-.\hv_generic.ps1 -Action build -Version almalinux-9.2 -Template rhel -Log 0
+.\hv_generic.ps1 -Action build -Version almalinux-8.9 -Template rhel -Log 0
+.\hv_generic.ps1 -Action build -Version almalinux-9.4 -Template rhel -Log 0
 ```
 
 ### Building RockyLinux Machines
 
 |Action|Version|Template|Log|OS|
 |-------|-------|--------|---|-|
-|`build`|rockylinux-8.8|rhel|0/1|Rocky Linux 8.8|
-|`build`|rockyinux-9.2|rhel|0/1|Rocky Linux 9.2|
+|`build`|rockylinux-8.9|rhel|0/1|Rocky Linux 8.9|
+|`build`|rockyinux-9.4|rhel|0/1|Rocky Linux 9.4|
 
 #### Examples for RockyLinux
 
 ```powershell
-.\hv_generic.ps1 -Action build -Version rockylinux-8.8 -Template rhel -Log 0
-.\hv_generic.ps1 -Action build -Version rockylinux-9.2 -Template rhel -Log 0
+.\hv_generic.ps1 -Action build -Version rockylinux-8.9 -Template rhel -Log 0
+.\hv_generic.ps1 -Action build -Version rockylinux-9.4 -Template rhel -Log 0
 ```
 
 ### Building OracleLinux Machines
 
 |Action|Version|Template|Log|OS|
 |-------|-------|--------|---|-|
-|`build`|oraclelinux-8.8|rhel|0/1|Oracle Linux 8.8|
-|`build`|oraclelinux-9.2|rhel|0/1|Oracle Linux 9.2|
+|`build`|oraclelinux-8.9|rhel|0/1|Oracle Linux 8.9|
+|`build`|oraclelinux-9.4|rhel|0/1|Oracle Linux 9.4|
 
 #### Examples for OracleLinux
 
 ```powershell
-.\hv_generic.ps1 -Action build -Version oraclelinux-8.8 -Template rhel -Log 0
-.\hv_generic.ps1 -Action build -Version oraclelinux-9.2 -Template rhel -Log 0
+.\hv_generic.ps1 -Action build -Version oraclelinux-8.9 -Template rhel -Log 0
+.\hv_generic.ps1 -Action build -Version oraclelinux-9.4 -Template rhel -Log 0
 ```
 
 ### Building Ubuntu Machines
@@ -305,12 +276,14 @@ Example for Windows 2022 Datacenter
 |-------|-------|--------|---|-|
 |`build`|ubuntu-20.04|ubuntu|0/1|Ubuntu 20.04|
 |`build`|ubuntu-22.04|ubuntu|0/1|Ubuntu 22.04|
+|`build`|ubuntu-24.04|ubuntu|0/1|Ubuntu 24.04|
 
 #### Examples for Ubuntu
 
 ```powershell
 .\hv_generic.ps1 -Action build -Version ubuntu-20.04 -Template ubuntu -Log 0
 .\hv_generic.ps1 -Action build -Version ubuntu-22.04 -Template ubuntu -Log 0
+.\hv_generic.ps1 -Action build -Version ubuntu-24.04 -Template ubuntu -Log 0
 ```
 
 ## Known issues
